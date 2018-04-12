@@ -4,6 +4,21 @@ from os import listdir, makedirs
 import numpy as np
 
 '''
+defines
+'''
+def calculate_SAD(arr1,arr2):
+    z = abs(arr1/100 - arr2/ 100)
+    z = z * 100
+    return np.sum(z)
+
+def calculate_SSD(arr1,arr2):
+    z = abs(arr1/100 - arr2/100)
+    z = z * 100
+    return np.sum(z**2)
+
+
+
+'''
 read file
 '''
 path = 'CroppedYale/'
@@ -27,12 +42,12 @@ testing_data = [join(d,f)
             ]
 
 
+
 '''
 start testing
 '''
-
-SADPrediction = [0] * len(testing_data)                             # save the predictions of each testing image for SAD
-SSDPrediction = [0] * len(testing_data)                             # save the predictions of each testing image for SSD
+sad_predict = {}                                                    # save the predictions of each testing image for SAD
+ssd_predict = {}                                                    # save the predictions of each testing image for SSD
 
 for i, test in enumerate(testing_data):
     min_SAD_value = 9999999999999
@@ -41,30 +56,44 @@ for i, test in enumerate(testing_data):
     min_SSD_name = None
     im_test = Image.open(test).convert("L")                         # read the testing image and convert it to grey scale                            
     
+    sad_predict[test] = {}
+    ssd_predict[test] = {}
     for train in training_data:
         im_train = Image.open(train).convert("L")                   # read the training image and convert it to grey scale
         
         x = np.array(im_test,dtype=np.int64)
         y = np.array(im_train,dtype=np.int64)
-        #print(x.shape)
-        #print(y.shape)
-        z = abs(x/100 - y/100)
-        z = z*100
 
-        SAD = np.sum(z)                                             # calculate SAD and save the file name
+        SAD = calculate_SAD(x, y)                                   # calculate SAD and save the file name
         if SAD < min_SAD_value:
             min_SAD_value = SAD
             min_SAD_name = test
             print(min_SAD_name,"*******",min_SAD_value)
-            SADPrediction[i] = min_SAD_name
+            sad_predict[test] = {train: min_SAD_value}
             
-        SSD = np.sum(z**2)                                          # calculate SSD and save the file name
+        SSD = calculate_SSD(x, y)                                   # calculate SSD and save the file name
         if SSD < min_SSD_value:
             min_SSD_value = SSD
             min_SSD_name = test
             print(min_SSD_name,"*******",min_SSD_value)
-            SSDPrediction[i] = min_SSD_name
+            ssd_predict[test] = {train: min_SSD_value}
 
+'''
+accuracy
+'''
+correct_sad = 0
+for k in sad_predict.keys():
+    for pk in sad_predict[k].keys():
+        if k.replace('\\','/').split('/')[1] in pk:
+            correct += 1
+accuracy_sad = correct_sad / len(testing_data)
+print("SAD :\n\tcorrect : {0} images in {1} testing data \n\taccuracy : {1}".format(correct_sad,len(testing_data),accuracy_sad))
 
+correct_ssd = 0
+for k in ssd_predict.keys():
+    for pk in ssd_predict[k].keys():
+        if k.replace('\\','/').split('/')[1] in pk:
+            correct += 1
+accuracy_ssd = correct_ssd / len(testing_data)
+print("SSD :\n\tcorrect : {0} images in {1} testing data \n\taccuracy : {1}".format(correct_ssd,len(testing_data),accuracy_ssd))
 
-#print(im.format, im.size, im.mode)
